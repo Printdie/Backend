@@ -1,0 +1,40 @@
+openapi: 3.0.0
+info:
+  title: Sample API
+  version: 1.0.0
+servers:
+  - url: https://d5dpmpfohmj9n55641sc.apigw.yandexcloud.net     # change
+paths:
+  /lists:
+    get:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: d4ecao2mo28s1vsvch5o                       # change
+        tag: $latest
+        service_account_id: aje0pt2ichfm7pp9l2kh                # change
+      responses:
+        '200':
+          description: Ok
+    post:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: d4ecao2mo28s1vsvch5o                       # change
+        tag: $latest
+        service_account_id: aje0pt2ichfm7pp9l2kh                # change
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Test'
+        required: false
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Test'
+          description: Ok
+components:
+  schemas:
+    Test:
+      type: object
