@@ -1,64 +1,53 @@
-const getClient = async function (context) {
-	const pg = require("pg");
+const express = require('express');
+const { Client } = require("pg");
+const serverless = require('serverless-http');
+const app = express();
+const tableName = "backend";
+
+const createClient = (request) => {
 	const proxyId = "akf1ca19r8vbi37sutha";
 	const proxyEndpoint = "akf1ca19r8vbi37sutha.postgresql-proxy.serverless.yandexcloud.net";
 	const user = "user1";
-	const connection = `postgres://${user}:${context.token.access_token}@${proxyEndpoint}:6432/${proxyId}?ssl=true`;
-	return new pg.Client(connection);
-};
-
-module.exports.handler = async function (event, context) {
-	const client = await getClient(context);
+	const connection = `postgres://${user}:${request.apiGateway.context.token.access_token}@${proxyEndpoint}:6432/${proxyId}?ssl=true`;
+	const client = new Client(connection);
 	client.connect();
-
-	let result = await client.query("SELECT * FROM backend");
-
-	return {
-		statusCode: 200,
-		body: result
-	};
-};
-
-/*delete и put*/
-
-
-/*
-const connect = async function (client) {
-	const express = require('express');
-	const cors = require("cors");
-	const app = express();
-	app.use(cors());
-	app.use(express.json());
-
-	app.get('/lists', (req, res) => {
-		res.send({ application: 'sample-app', version: '1.0' });
-	});
-
-	app.post('/lists', async (req, res) => {
-		res.setHeader('Access-Control-Allow-Origin', '*');
-		res.setHeader('Access-Control-Allow-Headers', 'origin, content-type, accept');
-		const body = JSON.parse(Buffer.from(req.body, 'base64').toString())
-		await client.query(`INSERT INTO data (id, name, boughtProducts, pendingProducts) VALUES(${body.id}, '${body.name}', ARRAY[]::INT[], ARRAY[]::INT[])`);
-		res.send({ ...req.body });
-	});
-
-	return app;
+	return client;
 }
 
-const getClient = async function (context) {
-	const pg = require("pg");
-	const proxyId = "akf1ca19r8vbi37sutha";
-	const proxyEndpoint = "akf1ca19r8vbi37sutha.postgresql-proxy.serverless.yandexcloud.net";
-	const user = "user1";
-	const connection = `postgres://${user}:${context.token.access_token}@${proxyEndpoint}:6432/${proxyId}?ssl=true`;
-	return new pg.Client(connection);
-};
+app.get('/lists', async (request, response) => {
+	const client = createClient(request)
+	let result = await client.query(`SELECT * FROM ${tableName}`);
+	response.send([...result.rows]);
+});
 
-module.exports.handler = async function (event, context) {
-	const serverless = require('serverless-http');
-	const client = await getClient(context);
-	client.connect();
-	const app = await connect(client);
-	serverless(app);
-};
-*/
+app.post('/lists', async (request, response) => {
+	response.setHeader('Access-Control-Allow-Origin', '*');
+	response.setHeader('Access-Control-Allow-Headers', 'origin, content-type, accept');
+	const client = createClient(request);
+	const body = JSON.parse(Buffer.from(request.body, 'base64').toString());
+
+	await client.query(`INSERT INTO ${tableName} (id, name, boughtProducts, pendingProducts) VALUES(${body.id}, '${body.name}', ARRAY[]::INT[], ARRAY[]::INT[])`);
+	response.send({ ...request.body });
+});
+
+app.delete('/lists', async (request, response) => {
+	response.setHeader('Access-Control-Allow-Origin', '*');
+	response.setHeader('Access-Control-Allow-Headers', 'origin, content-type, accept');
+	const client = createClient(request);
+	const body = JSON.parse(Buffer.from(request.body, 'base64').toString());
+
+	await client.query(`DELETE FROM ${tableName} WHERE id='${body.id}'`);
+	response.send({ ...request.body });
+});
+
+app.put('/lists', async (request, response) => {
+	response.setHeader('Access-Control-Allow-Origin', '*');
+	response.setHeader('Access-Control-Allow-Headers', 'origin, content-type, accept');
+	const client = createClient(request);
+	const body = JSON.parse(Buffer.from(request.body, 'base64').toString());
+
+	await client.query(`UPDATE ${tableName} SET name = '${body.name}' WHERE id = ${body.id}`);
+	response.send({ ...request.body });
+});
+
+module.exports.handler = serverless(app);
