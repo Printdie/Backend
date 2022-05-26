@@ -1,35 +1,28 @@
-/*
-
-
-const getClient = async function () {
+const getClient = async function (context) {
+	const pg = require("pg");
 	const proxyId = "akf1ca19r8vbi37sutha";
 	const proxyEndpoint = "akf1ca19r8vbi37sutha.postgresql-proxy.serverless.yandexcloud.net";
 	const user = "user1";
-	const accessToken = "t1.9euelZrPicydm5vJxpHGi8mZkoyTlO3rnpWaz4-LzZacl5mSyI-PxpPNlJfl9PdIC0dr-e8tKVX43fT3CDpEa_nvLSlV-A.Ujw9bnyLdWTqu6fzBia__qUa7de1q60K7jgvJfWdT3V_N9hRK2gG1TXSPZa9uUysLdPfpSU5ynY7koUKzUpjCA";
-
-	const connection = `postgres://${user}:${accessToken}@${proxyEndpoint}:6432/${proxyId}?ssl=true`;
+	const connection = `postgres://${user}:${context.token.access_token}@${proxyEndpoint}:6432/${proxyId}?ssl=true`;
 	return new pg.Client(connection);
 };
 
 module.exports.handler = async function (event, context) {
-	const client = await getClient();
+	const client = await getClient(context);
 	client.connect();
 
 	let result = await client.query("SELECT * FROM backend");
 
 	return {
 		statusCode: 200,
-		body: context.token.access_token
+		body: result
 	};
 };
-*/
-
-
-
 
 /*delete и put*/
 
 
+/*
 const connect = async function (client) {
 	const express = require('express');
 	const cors = require("cors");
@@ -66,5 +59,6 @@ module.exports.handler = async function (event, context) {
 	const client = await getClient(context);
 	client.connect();
 	const app = await connect(client);
-	return serverless(app);
+	serverless(app);
 };
+*/
