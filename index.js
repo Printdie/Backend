@@ -1,5 +1,5 @@
 /*
-const pg = require("pg");
+
 
 const getClient = async function () {
 	const proxyId = "akf1ca19r8vbi37sutha";
@@ -25,37 +25,35 @@ module.exports.handler = async function (event, context) {
 */
 
 
-const express = require('express');
-const { Client } = require("pg");
-const cors = require("cors");
-const serverless = require('serverless-http');
-let serverless = require('serverless-http');
 
-const proxyId = "akfeee9p1eubbfg533h4"; // Идентификатор подключения
-const proxyEndpoint = "akfeee9p1eubbfg533h4.postgresql-proxy.serverless.yandexcloud.net:6432"; // Точка входа
-const user = "user1"; // Пользователь БД
-const conString = "postgres://" + user + ":t1.9euelZqLl5POnseRkpyOjsyejMfPju3rnpWai5KXi4yLjs3HnoqTj57Jmpzl8_c-Vkdr-e8vThJC_t3z934ERWv57y9OEkL-.C4aXYX8t_-vd-O5RQUi_x_luarm8f-zGUPhfT43KdYUncgFYNUUHwf8169Nr2goz7ZkQOPI7eWG460FZ5KPCDg@" + proxyEndpoint + "/" + proxyId + "?ssl=true";
-const client = new Client(conString);
-client.connect();
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-app.get('/lists', (req, res) => {
-	res.send({ application: 'sample-app', version: '1.0' });
-});
-app.post('/lists', async (req, res) => {
-	res.setHeader('Access-Control-Allow-Origin', '*');
-	res.setHeader('Access-Control-Allow-Headers', 'origin, content-type, accept');
-	const body = JSON.parse(Buffer.from(req.body, 'base64').toString())
-	await client.query(`INSERT INTO data (id, name, boughtProducts, pendingProducts) VALUES(${body.id}, '${body.name}', ARRAY[]::INT[], ARRAY[]::INT[])`);
-	res.send({ ...req.body });
-});
 /*delete и put*/
 
 
+const connect = async function (client) {
+	const express = require('express');
+	const cors = require("cors");
+	const app = express();
+	app.use(cors());
+	app.use(express.json());
+
+	app.get('/lists', (req, res) => {
+		res.send({ application: 'sample-app', version: '1.0' });
+	});
+
+	app.post('/lists', async (req, res) => {
+		res.setHeader('Access-Control-Allow-Origin', '*');
+		res.setHeader('Access-Control-Allow-Headers', 'origin, content-type, accept');
+		const body = JSON.parse(Buffer.from(req.body, 'base64').toString())
+		await client.query(`INSERT INTO data (id, name, boughtProducts, pendingProducts) VALUES(${body.id}, '${body.name}', ARRAY[]::INT[], ARRAY[]::INT[])`);
+		res.send({ ...req.body });
+	});
+
+	return app;
+}
+
 const getClient = async function (context) {
+	const pg = require("pg");
 	const proxyId = "akf1ca19r8vbi37sutha";
 	const proxyEndpoint = "akf1ca19r8vbi37sutha.postgresql-proxy.serverless.yandexcloud.net";
 	const user = "user1";
@@ -64,7 +62,9 @@ const getClient = async function (context) {
 };
 
 module.exports.handler = async function (event, context) {
+	const serverless = require('serverless-http');
 	const client = await getClient(context);
 	client.connect();
+	const app = await connect(client);
 	return serverless(app);
 };
